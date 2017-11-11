@@ -1,13 +1,16 @@
 package actors
 
 import akka.actor.{Actor, ActorRef, Props}
-import akka.event.LoggingReceive
+import akka.event.{Logging, LoggingReceive}
 
 class Customer extends Actor {
 
   var cart: ActorRef = _
   var checkout: ActorRef = _
   var paymentService: ActorRef = _
+
+  val log = Logging(context.system, this)
+
 
   def receive: Receive = LoggingReceive {
     case NewCart =>
@@ -20,6 +23,9 @@ class Customer extends Actor {
     case CheckoutStarted(checkoutRef) =>
       checkout = checkoutRef
       context become InCheckout
+
+    case CartEmpty =>
+      log.info("Cart is empty.")
 
     case message: CartMessages =>
       cart ! message

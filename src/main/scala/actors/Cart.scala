@@ -40,22 +40,21 @@ class Cart extends Actor with Timers {
 
     case RemoveItem if itemCount == 1 =>
       timers.cancel(CartTimer)
-      itemCount -= 1
-      log.info("Item removed. Current item number: {}", itemCount)
-      context become Empty
+      log.info("Removing last item from cart.")
+      zeroItemsAndBecomeEmpty()
 
     case StartCheckout =>
       timers.cancel(CartTimer)
-      checkout ! StartCheckout(itemCount, context.parent)
-      context.parent ! CheckoutStarted
+      checkout ! InitCheckout(itemCount, context.parent)
+      sender ! CheckoutStarted
       log.info("Starting checkout. Current item number: {}", itemCount)
       context become InCheckout
 
     case CartTimerExpired =>
-      itemCount = 0
       log.info("Cart Timer expired. Resetting cart to empty")
-      context become Empty
+      zeroItemsAndBecomeEmpty()
   }
+
 
 
   def InCheckout: Receive = LoggingReceive {
@@ -67,11 +66,8 @@ class Cart extends Actor with Timers {
 
     case CloseCheckout =>
       log.info("Checkout Closed. Resetting cart to Empty")
-      itemCount = 0
-      context become Empty
+      zeroItemsAndBecomeEmpty()
 
-    case message: CheckoutMessages =>
-      checkout forward message
   }
 
 
@@ -81,6 +77,11 @@ class Cart extends Actor with Timers {
       context become Empty
   }
 
+  def zeroItemsAndBecomeEmpty(): Unit = {
+    itemCount = 0
+    context become Empty
+    sender ! CartEmpty
+  }
 
   def startCartTimer(timeInSeconds: Int): Unit = {
     timers.startSingleTimer(CartTimer, CartTimerExpired, timeInSeconds.seconds)

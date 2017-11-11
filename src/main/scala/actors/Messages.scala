@@ -25,6 +25,7 @@ case object Init extends GeneralMessages
 case object Done extends GeneralMessages
 
 case object NewCart extends CustomerMessages
+case object CartEmpty extends CustomerMessages
 case object ConfirmReceivingPayment extends CustomerMessages
 case class CheckoutStarted(checkoutRef: ActorRef) extends CustomerMessages
 case class PaymentServiceStarted(paymentRef: ActorRef) extends CustomerMessages
@@ -47,6 +48,6 @@ case object PaymentTimer extends MyTimers
 case class SelectPaymentMethod(paymentMethod: String) extends CheckoutMessages
 case class SelectDeliveryMethod(deliveryMethod: String) extends CheckoutMessages
 case object ReceivedPayment extends CheckoutMessages
-case class StartCheckout(numberOfItems: Int, customer: ActorRef) extends CartMessages
+case class InitCheckout(numberOfItems: Int, customer: ActorRef) extends CheckoutMessages
 
 case object DoPayment extends PaymentServiceMessages

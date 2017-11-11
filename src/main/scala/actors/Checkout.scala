@@ -24,7 +24,7 @@ class Checkout extends Actor with Timers {
       cancelCheckout()
   }
 
-  def SelectPaymentMethod: Receive = LoggingReceive {
+  def SelectingPaymentMethod: Receive = LoggingReceive {
 
     case SelectPaymentMethod(paymentMethod) =>
       log.info("Selected Payment method: {}", paymentMethod)
@@ -39,9 +39,9 @@ class Checkout extends Actor with Timers {
 
   def SelectingDelivery: Receive = LoggingReceive {
 
-    case SelectDeliveryMethod =>
-      log.info("Selected delivery method")
-      context become SelectPaymentMethod
+    case SelectDeliveryMethod(deliveryMethod) =>
+      log.info("Selected delivery method: {}", deliveryMethod)
+      context become SelectingPaymentMethod
 
     case Cancel(CheckoutTimer) =>
       cancelCheckout()
@@ -49,13 +49,13 @@ class Checkout extends Actor with Timers {
 
   def receive = LoggingReceive {
 
-    case StartCheckout(numberOfItems, customerRef) if numberOfItems > 0 =>
-      log.info("CheckoutStarted")
+    case InitCheckout(numberOfItems, customerRef) if numberOfItems > 0 =>
+      log.info("Checkout started.")
       customer = customerRef
       startTimer(CheckoutTimer, 2)
       context become SelectingDelivery
 
-    case StartCheckout(numberOfItems, _) if numberOfItems <= 0 =>
+    case InitCheckout(numberOfItems, _) if numberOfItems <= 0 =>
       log.info("Can't checkout with number of items {}", numberOfItems)
       cancelCheckout()
   }
