@@ -7,14 +7,30 @@ import scala.concurrent.duration._
 
 object ShopApp extends App {
   val shopSystem = ActorSystem("ShopApp")
-  val cart = shopSystem.actorOf(Props[Cart], "actors.Cart")
-
+  val cart = shopSystem.actorOf(Props[Cart], "Cart")
   val cartFSM = shopSystem.actorOf(Props[CartFSM], "cartFSM")
 
+  val customer = shopSystem.actorOf(Props[Customer], "customer")
 
-//    testFSM()
-//    testFSM2()
+  customer ! NewCart
+  //customer: Shopping, cart: Empty
+  customer ! AddItem
+  //customer: Shopping, cart: NonEmpty
+  customer ! AddItem
+  customer ! RemoveItem
+  customer ! RemoveItem
+  //customer: Shopping, cart: Empty
+  customer ! AddItem
+  //customer: Shopping, cart: NonEmpty
+  customer ! StartCheckout
+  //customer: Finalizing, cart: InCheckout
+  customer ! SelectDeliveryMethod("FastAndFurious Courier s.a.")
+  customer ! SelectPaymentMethod("On receive")
 
+
+
+  //    testFSM()
+  //    testFSM2()
   def testFSM(): Unit = {
     cartFSM ! CartFSM.AddItem
     cartFSM ! CartFSM.AddItem
@@ -22,7 +38,6 @@ object ShopApp extends App {
     cartFSM ! CartFSM.RemoveItem
     cartFSM ! CartFSM.AddItem
     cartFSM ! CartFSM.StartCheckout
-
   }
 
   def testFSM2(): Unit = {
@@ -35,32 +50,23 @@ object ShopApp extends App {
     cartFSM ! CheckoutFSM.SelectDeliveryMethod("method")
     cartFSM ! CheckoutFSM.SelectPaymentMethod("payment")
     cartFSM ! CheckoutFSM.ReceivedPayment
-
   }
 
-  test2()
-
   def test1(): Unit = {
-
     cart ! Init
     cart ! AddItem
     cart ! AddItem
-
     cart ! StartCheckout
     checkoutMessages()
-
   }
 
   def test2(): Unit = {
-
     cart ! Init
     cart ! AddItem
     cart ! AddItem
     cart ! StartCheckout
     checkoutMessages2()
-
   }
-
 
   def checkoutMessages(): Unit = {
     cart ! SelectDeliveryMethod
@@ -68,10 +74,9 @@ object ShopApp extends App {
 
   def checkoutMessages2(): Unit = {
     cart ! SelectDeliveryMethod
-    cart ! SelectPayment
-    cart ! ReceivePayment
+    cart ! SelectPaymentMethod
+    cart ! ReceivedPayment
   }
-
 
   Await.result(shopSystem.whenTerminated, Duration.Inf)
 }

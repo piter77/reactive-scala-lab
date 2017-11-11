@@ -46,7 +46,8 @@ class Cart extends Actor with Timers {
 
     case StartCheckout =>
       timers.cancel(CartTimer)
-      checkout ! StartCheckout(itemCount != 0)
+      checkout ! StartCheckout(itemCount, context.parent)
+      context.parent ! CheckoutStarted
       log.info("Starting checkout. Current item number: {}", itemCount)
       context become InCheckout
 
@@ -76,7 +77,7 @@ class Cart extends Actor with Timers {
 
   def receive: Receive = LoggingReceive {
     case Init =>
-      log.info("Starting new Cart with Empty context")
+      log.info("Initializing new Cart with Empty context")
       context become Empty
   }
 

@@ -1,28 +1,40 @@
 package actors
 
+import akka.actor.ActorRef
 
+//Messages generic for all actors
+sealed trait GeneralMessages
 
-//Messages that actors.Cart Actor can handle
+//Messages that Customer Actor can handle
+sealed trait CustomerMessages
+
+//Messages that Cart Actor can handle
 sealed trait CartMessages
-
-//Messages for actors.Cart and actors.Checkout actors communication
-sealed trait CartAndCheckoutMessages
 
 //Messages and object of Timers used in App
 sealed trait MyTimers
 
-//Messages that actors.Checkout Actor can handle
+//Messages that Checkout Actor can handle
 sealed trait CheckoutMessages
+
+//Messages that PaymentService actor can handle
+sealed trait PaymentServiceMessages
+
+
+case object Init extends GeneralMessages
+case object Done extends GeneralMessages
+
+case object NewCart extends CustomerMessages
+case object ConfirmReceivingPayment extends CustomerMessages
+case class CheckoutStarted(checkoutRef: ActorRef) extends CustomerMessages
+case class PaymentServiceStarted(paymentRef: ActorRef) extends CustomerMessages
 
 
 case object RemoveItem extends CartMessages
 case object AddItem extends CartMessages
-case object Init extends CartMessages
-case object Done extends CartMessages
-case class StartCheckout(bool: Boolean) extends CartMessages
-
-case object CancelCheckout extends CartAndCheckoutMessages
-case object CloseCheckout extends CartAndCheckoutMessages
+case object StartCheckout extends CartMessages
+case object CancelCheckout extends CartMessages
+case object CloseCheckout extends CartMessages
 
 
 case object CartTimer extends MyTimers
@@ -32,6 +44,9 @@ case class Cancel(o: Object) extends MyTimers
 case object PaymentTimer extends MyTimers
 
 
-case object SelectPayment extends CheckoutMessages
-case object SelectDeliveryMethod extends CheckoutMessages
-case object ReceivePayment extends CheckoutMessages
+case class SelectPaymentMethod(paymentMethod: String) extends CheckoutMessages
+case class SelectDeliveryMethod(deliveryMethod: String) extends CheckoutMessages
+case object ReceivedPayment extends CheckoutMessages
+case class StartCheckout(numberOfItems: Int, customer: ActorRef) extends CartMessages
+
+case object DoPayment extends PaymentServiceMessages

@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{Actor, Timers}
+import akka.actor.{Actor, ActorRef, Props, Timers}
 import akka.event.{Logging, LoggingReceive}
 
 import scala.concurrent.duration._
@@ -10,9 +10,12 @@ class Checkout extends Actor with Timers {
 
   val log = Logging(context.system, this)
 
+  var customer: ActorRef = _
+  var paymentService: ActorRef = _
+
   def ProcessingPayment: Receive = LoggingReceive {
 
-    case ReceivePayment =>
+    case ReceivedPayment =>
       log.info("Payment Received. Closing Checkout.")
       context.parent ! CloseCheckout
       context stop self
@@ -23,9 +26,11 @@ class Checkout extends Actor with Timers {
 
   def SelectPaymentMethod: Receive = LoggingReceive {
 
-    case SelectPayment =>
-      log.info("Selected Payment method")
+    case SelectPaymentMethod(paymentMethod) =>
+      log.info("Selected Payment method: {}", paymentMethod)
       startTimer(PaymentTimer, 2)
+      paymentService = context.actorOf(Props[PaymentService], "paymentService")
+      customer ! PaymentServiceStarted(paymentService)
       context become ProcessingPayment
 
     case Cancel(CheckoutTimer) =>
@@ -44,10 +49,15 @@ class Checkout extends Actor with Timers {
 
   def receive = LoggingReceive {
 
-    case StartCheckout(true) =>
+    case StartCheckout(numberOfItems, customerRef) if numberOfItems > 0 =>
       log.info("CheckoutStarted")
+      customer = customerRef
       startTimer(CheckoutTimer, 2)
       context become SelectingDelivery
+
+    case StartCheckout(numberOfItems, _) if numberOfItems <= 0 =>
+      log.info("Can't checkout with number of items {}", numberOfItems)
+      cancelCheckout()
   }
 
   def startTimer(timer: Object, time: Int): Unit = {
@@ -57,6 +67,7 @@ class Checkout extends Actor with Timers {
   def cancelCheckout(): Unit = {
     log.info("Cancelling Checkout")
 
+    customer ! CancelCheckout
     context.parent ! CancelCheckout
     context stop self
   }
