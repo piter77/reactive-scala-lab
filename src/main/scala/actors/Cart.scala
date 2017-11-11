@@ -1,37 +1,27 @@
+package actors
 
-import Checkout.CheckoutMessage
 import akka.actor.{Timers, _}
-import akka.event.LoggingReceive
+import akka.event.{Logging, LoggingReceive}
 
 import scala.concurrent.duration._
 
-object Cart {
-  case object RemoveItem
-  case object AddItem
-  case object CartTimer
-  case class StartCheckout(bool: Boolean)
-  case object CancelCheckout
-  case object CloseCheckout
-  case object Init
-  case object Done
-  case object Expired
-}
 
 class Cart extends Actor with Timers {
 
-  import Cart._
-
+  val log = Logging(context.system, this)
   var itemCount = 0
   val checkout: ActorRef = context.actorOf(Props[Checkout], "checkout")
 
   def Empty: Receive = LoggingReceive {
 
     case AddItem =>
-      startTimer(5)
+      startCartTimer(5)
       itemCount += 1
+      log.info("Added new item. Current item number: {}", itemCount)
       context become NonEmpty
 
     case Done =>
+      log.info("Done")
       context.system.terminate()
   }
 
@@ -39,26 +29,30 @@ class Cart extends Actor with Timers {
   def NonEmpty: Receive = LoggingReceive {
 
     case AddItem =>
-      startTimer(5)
+      startCartTimer(5)
       itemCount += 1
+      log.info("Added new item. Current item number: {}", itemCount)
 
     case RemoveItem if itemCount > 1 =>
-      startTimer(5)
+      startCartTimer(5)
       itemCount -= 1
+      log.info("Item removed. Current item number: {}", itemCount)
 
     case RemoveItem if itemCount == 1 =>
       timers.cancel(CartTimer)
       itemCount -= 1
+      log.info("Item removed. Current item number: {}", itemCount)
       context become Empty
 
     case StartCheckout =>
       timers.cancel(CartTimer)
-
       checkout ! StartCheckout(itemCount != 0)
+      log.info("Starting checkout. Current item number: {}", itemCount)
       context become InCheckout
 
-    case Expired =>
+    case CartTimerExpired =>
       itemCount = 0
+      log.info("Cart Timer expired. Resetting cart to empty")
       context become Empty
   }
 
@@ -66,26 +60,29 @@ class Cart extends Actor with Timers {
   def InCheckout: Receive = LoggingReceive {
 
     case CancelCheckout =>
-      startTimer(5)
+      log.info("Checkout canceled.")
+      startCartTimer(5)
       context become NonEmpty
 
     case CloseCheckout =>
+      log.info("Checkout Closed. Resetting cart to Empty")
       itemCount = 0
       context become Empty
 
-    case message: CheckoutMessage =>
+    case message: CheckoutMessages =>
       checkout forward message
   }
 
 
-  def receive = LoggingReceive {
+  def receive: Receive = LoggingReceive {
     case Init =>
+      log.info("Starting new Cart with Empty context")
       context become Empty
   }
 
 
-  def startTimer(timeInSeconds: Int): Unit = {
-    timers.startSingleTimer(CartTimer, Expired, timeInSeconds.seconds)
+  def startCartTimer(timeInSeconds: Int): Unit = {
+    timers.startSingleTimer(CartTimer, CartTimerExpired, timeInSeconds.seconds)
   }
 
 }

@@ -1,6 +1,7 @@
+package fsmactors
 
-import CartFSM._
 import akka.actor.{Actor, FSM, Timers, _}
+import fsmactors.CartFSM.{Data, State}
 
 import scala.concurrent.duration._
 

@@ -1,17 +1,19 @@
+import actors._
 import akka.actor._
+import fsmactors.{CartFSM, CheckoutFSM}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object ShopApp extends App {
   val shopSystem = ActorSystem("ShopApp")
-  val cart = shopSystem.actorOf(Props[Cart], "Cart")
+  val cart = shopSystem.actorOf(Props[Cart], "actors.Cart")
 
   val cartFSM = shopSystem.actorOf(Props[CartFSM], "cartFSM")
 
 
 //    testFSM()
-    testFSM2()
+//    testFSM2()
 
   def testFSM(): Unit = {
     cartFSM ! CartFSM.AddItem
@@ -36,38 +38,38 @@ object ShopApp extends App {
 
   }
 
-  //test1()
+  test2()
 
   def test1(): Unit = {
 
-    cart ! Cart.Init
-    cart ! Cart.AddItem
-    cart ! Cart.AddItem
+    cart ! Init
+    cart ! AddItem
+    cart ! AddItem
 
-    cart ! Cart.StartCheckout
+    cart ! StartCheckout
     checkoutMessages()
 
   }
 
   def test2(): Unit = {
 
-    cart ! Cart.Init
-    cart ! Cart.AddItem
-    cart ! Cart.AddItem
-    cart ! Cart.StartCheckout
+    cart ! Init
+    cart ! AddItem
+    cart ! AddItem
+    cart ! StartCheckout
     checkoutMessages2()
 
   }
 
 
   def checkoutMessages(): Unit = {
-    cart ! Checkout.SelectDeliveryMethod
+    cart ! SelectDeliveryMethod
   }
 
   def checkoutMessages2(): Unit = {
-    cart ! Checkout.SelectDeliveryMethod
-    cart ! Checkout.SelectPayment
-    cart ! Checkout.ReceivePayment
+    cart ! SelectDeliveryMethod
+    cart ! SelectPayment
+    cart ! ReceivePayment
   }
 
 

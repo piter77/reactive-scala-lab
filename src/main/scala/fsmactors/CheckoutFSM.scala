@@ -1,6 +1,8 @@
-import CartFSM.{CancelCheckout, CloseCheckout, StartCheckout}
-import CheckoutFSM._
+package fsmactors
+
 import akka.actor.{Actor, FSM, Timers}
+import fsmactors.CartFSM.{CancelCheckout, CloseCheckout, StartCheckout}
+import fsmactors.CheckoutFSM._
 
 import scala.concurrent.duration._
 

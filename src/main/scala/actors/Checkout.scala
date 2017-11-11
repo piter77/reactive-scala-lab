@@ -1,29 +1,19 @@
-import Cart.{CancelCheckout, CloseCheckout, StartCheckout}
+package actors
+
 import akka.actor.{Actor, Timers}
-import akka.event.LoggingReceive
+import akka.event.{Logging, LoggingReceive}
 
 import scala.concurrent.duration._
 
 
-object Checkout {
-
-  sealed trait CheckoutMessage
-  case object SelectPayment extends CheckoutMessage
-  case object SelectDeliveryMethod extends CheckoutMessage
-  case object ReceivePayment extends CheckoutMessage
-
-  case object CheckoutTimer
-  case class Cancel(o: Object)
-  case object PaymentTimer
-}
-
 class Checkout extends Actor with Timers {
 
-  import Checkout._
+  val log = Logging(context.system, this)
 
   def ProcessingPayment: Receive = LoggingReceive {
 
     case ReceivePayment =>
+      log.info("Payment Received. Closing Checkout.")
       context.parent ! CloseCheckout
       context stop self
 
@@ -34,6 +24,7 @@ class Checkout extends Actor with Timers {
   def SelectPaymentMethod: Receive = LoggingReceive {
 
     case SelectPayment =>
+      log.info("Selected Payment method")
       startTimer(PaymentTimer, 2)
       context become ProcessingPayment
 
@@ -44,6 +35,7 @@ class Checkout extends Actor with Timers {
   def SelectingDelivery: Receive = LoggingReceive {
 
     case SelectDeliveryMethod =>
+      log.info("Selected delivery method")
       context become SelectPaymentMethod
 
     case Cancel(CheckoutTimer) =>
@@ -53,6 +45,7 @@ class Checkout extends Actor with Timers {
   def receive = LoggingReceive {
 
     case StartCheckout(true) =>
+      log.info("CheckoutStarted")
       startTimer(CheckoutTimer, 2)
       context become SelectingDelivery
   }
@@ -62,6 +55,8 @@ class Checkout extends Actor with Timers {
   }
 
   def cancelCheckout(): Unit = {
+    log.info("Cancelling Checkout")
+
     context.parent ! CancelCheckout
     context stop self
   }
