@@ -49,15 +49,17 @@ class Checkout extends Actor with Timers {
 
   def receive = LoggingReceive {
 
-    case InitCheckout(numberOfItems, customerRef) if numberOfItems > 0 =>
+    case InitCheckout(cart: Cart, _) if cart.items.isEmpty =>
+      log.info("Can't checkout with empty cart")
+      cancelCheckout()
+
+    case InitCheckout(_, customerRef) =>
       log.info("Checkout started.")
       customer = customerRef
       startTimer(CheckoutTimer, 2)
       context become SelectingDelivery
 
-    case InitCheckout(numberOfItems, _) if numberOfItems <= 0 =>
-      log.info("Can't checkout with number of items {}", numberOfItems)
-      cancelCheckout()
+
   }
 
   def startTimer(timer: Object, time: Int): Unit = {

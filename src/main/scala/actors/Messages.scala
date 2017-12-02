@@ -31,8 +31,8 @@ case class CheckoutStarted(checkoutRef: ActorRef) extends CustomerMessages
 case class PaymentServiceStarted(paymentRef: ActorRef) extends CustomerMessages
 
 
-case object RemoveItem extends CartMessages
-case object AddItem extends CartMessages
+case class RemoveItem(item: Item, num: Int) extends CartMessages
+case class AddItem(item: Item) extends CartMessages
 case object StartCheckout extends CartMessages
 case object CancelCheckout extends CartMessages
 case object CloseCheckout extends CartMessages
@@ -48,6 +48,6 @@ case object PaymentTimer extends MyTimers
 case class SelectPaymentMethod(paymentMethod: String) extends CheckoutMessages
 case class SelectDeliveryMethod(deliveryMethod: String) extends CheckoutMessages
 case object ReceivedPayment extends CheckoutMessages
-case class InitCheckout(numberOfItems: Int, customer: ActorRef) extends CheckoutMessages
+case class InitCheckout(cart: Cart, customer: ActorRef) extends CheckoutMessages
 
 case object DoPayment extends PaymentServiceMessages

@@ -17,7 +17,10 @@ class CustomerSpec extends TestKit(ActorSystem("ShopSystem"))
 
       val customerMock = TestProbe()
       val checkout = parent.childActorOf(Props[Checkout])
-      parent.send(checkout, InitCheckout(1, customerMock.ref))
+
+      val notEmptyCart = Cart.empty.addItem(Item("123", BigDecimal(23), 5))
+
+      parent.send(checkout, InitCheckout(notEmptyCart, customerMock.ref))
       checkout ! SelectDeliveryMethod("with post")
       checkout ! SelectPaymentMethod("cash")
       checkout ! ReceivedPayment

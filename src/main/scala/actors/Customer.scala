@@ -14,7 +14,7 @@ class Customer extends Actor {
 
   def receive: Receive = LoggingReceive {
     case NewCart =>
-      cart = context.actorOf(Props[Cart], "cart")
+      cart = context.actorOf(Props[CartManager], "cart")
       cart ! Init
       context become Shopping
   }

@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 object ShopApp extends App {
   val shopSystem = ActorSystem("ShopSystem")
-  val cart = shopSystem.actorOf(Props[Cart], "Cart")
+  val cart = shopSystem.actorOf(Props[CartManager], "Cart")
   val cartFSM = shopSystem.actorOf(Props[CartFSM], "cartFSM")
 
   val customer = shopSystem.actorOf(Props[Customer], "customer")
