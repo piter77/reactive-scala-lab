@@ -5,7 +5,7 @@ import akka.event.{Logging, LoggingReceive}
 
 class Customer extends Actor {
 
-  var cart: ActorRef = _
+  var cartManager: ActorRef = _
   var checkout: ActorRef = _
   var paymentService: ActorRef = _
 
@@ -14,13 +14,16 @@ class Customer extends Actor {
 
   def receive: Receive = LoggingReceive {
     case NewCart =>
-      cart = context.actorOf(Props[CartManager], "cart")
-      cart ! Init
+      log.info("This is customer. gonna create cart")
+      cartManager = context.actorOf(Props[CartManager], "cartManager")
+      cartManager ! Init
+      log.info("Going into shopping state")
       context become Shopping
   }
 
   def Shopping: Receive = LoggingReceive {
     case CheckoutStarted(checkoutRef) =>
+      log.info("received checkout started...")
       checkout = checkoutRef
       context become InCheckout
 
@@ -28,12 +31,13 @@ class Customer extends Actor {
       log.info("Cart is empty.")
 
     case message: CartMessages =>
-      cart ! message
+      cartManager ! message
 
   }
 
   def InCheckout: Receive = LoggingReceive {
     case message: CheckoutMessages =>
+      log.info("forwarding checkout message...")
       checkout ! message
 
     case PaymentServiceStarted(paymentServiceRef) =>

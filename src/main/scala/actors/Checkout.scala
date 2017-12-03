@@ -28,7 +28,7 @@ class Checkout extends Actor with Timers {
 
     case SelectPaymentMethod(paymentMethod) =>
       log.info("Selected Payment method: {}", paymentMethod)
-      startTimer(PaymentTimer, 2)
+      startTimer(PaymentTimer, 30)
       paymentService = context.actorOf(Props[PaymentService], "paymentService")
       customer ! PaymentServiceStarted(paymentService)
       context become ProcessingPayment
@@ -38,7 +38,6 @@ class Checkout extends Actor with Timers {
   }
 
   def SelectingDelivery: Receive = LoggingReceive {
-
     case SelectDeliveryMethod(deliveryMethod) =>
       log.info("Selected delivery method: {}", deliveryMethod)
       context become SelectingPaymentMethod
@@ -56,7 +55,7 @@ class Checkout extends Actor with Timers {
     case InitCheckout(_, customerRef) =>
       log.info("Checkout started.")
       customer = customerRef
-      startTimer(CheckoutTimer, 2)
+      startTimer(CheckoutTimer, 30)
       context become SelectingDelivery
 
 

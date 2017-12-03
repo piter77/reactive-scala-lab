@@ -1,114 +1,164 @@
 package actors
 
 import akka.actor.{Timers, _}
-import akka.event.{Logging, LoggingReceive}
+import akka.event.Logging
+import akka.persistence.{PersistentActor, RecoveryCompleted}
 
 import scala.concurrent.duration._
 
 
+// states
+sealed trait CartManagerState
 
-case class Item(name: String, price: BigDecimal, count: Int=1){
-  override def toString: String = name + " " + price.toString
-}
+case object EmptyState extends CartManagerState
 
-case class Cart(items: Map[String, Item]) {
+case object NonEmptyState extends CartManagerState
 
-  def addItem(newItem: Item): Cart = {
-    val currentCount = if (items contains newItem.name) items(newItem.name).count else 0
-    copy(items = items.updated(newItem.name, newItem.copy(count = currentCount + newItem.count)))
-  }
+case object InCheckoutState extends CartManagerState
 
-  def removeItem(toDelete: Item, cnt: Int): Cart = {
-    if (items(toDelete.name).count <= cnt) {
-      copy(items = items - toDelete.name)
-    } else {
-      val currentCount = items(toDelete.name).count
-      copy(items = items.updated(toDelete.name, toDelete.copy(count = currentCount - cnt)))
-    }
-  }
-}
-
-object Cart {
-  val empty = Cart(Map.empty)
-}
+case class CartManagerStateChangeEvent(state: CartManagerState)
 
 
-class CartManager(var shoppingCart: Cart) extends Actor with Timers {
+sealed trait ItemEvent
 
-  def this() = this(Cart.empty)
+case class AddItemEvent(item: Item) extends ItemEvent
+
+case class RemoveItemEvent(item: Item, num: Int) extends ItemEvent
+
+case class EraseItemsEvent() extends ItemEvent
+
+
+class CartManager(id: String = "sample-id") extends PersistentActor with Timers {
+
+  var state = Cart()
 
   val log = Logging(context.system, this)
   val checkout: ActorRef = context.actorOf(Props[Checkout], "checkout")
 
-  def Empty: Receive = LoggingReceive {
+  override def persistenceId = id
+
+  def updateState(event: CartManagerStateChangeEvent): Unit = {
+    log.info("Changing context to " + event.state.toString)
+    context.become(
+      event.state match {
+        case EmptyState => Empty
+        case NonEmptyState => NonEmpty
+        case InCheckoutState => InCheckout
+      })
+  }
+
+  def updateCart(event: ItemEvent): Unit = {
+    startCartTimer(2)
+    event match {
+      case AddItemEvent(item: Item) =>
+        state = state.addItem(item)
+      case RemoveItemEvent(item, num) =>
+        state = state.removeItem(item, num)
+      case EraseItemsEvent() =>
+        state = Cart()
+    }
+  }
+
+
+  def Empty: Receive = {
 
     case AddItem(item: Item) =>
-      startCartTimer(5)
-      shoppingCart = shoppingCart.addItem(item)
-      log.info("Added new item: {}. Current item quantity in cart: {}", item.toString, shoppingCart.items(item.name).count)
-      context become NonEmpty
+      persist(AddItemEvent(item)) {
+        event => updateCart(event)
+      }
+      log.info("Added new item: {}", item.toString)
+      persist(CartManagerStateChangeEvent(NonEmptyState)) {
+        event => updateState(event)
+      }
 
     case Done =>
       log.info("Done")
       context.system.terminate()
+
+    case CheckState => sender ! CartEmpty
+
   }
 
 
-  def NonEmpty: Receive = LoggingReceive {
+  def NonEmpty: Receive = {
 
     case AddItem(item: Item) =>
-      startCartTimer(5)
-      shoppingCart = shoppingCart.addItem(item)
-      log.info("Added new item: {}. Current item quantity in cart: {}", item.toString, shoppingCart.items(item.name).count)
+      persist(AddItemEvent(item)) {
+        event => updateCart(event)
+      }
+      log.info("Added new item: {}.", item.toString)
 
     case RemoveItem(item: Item, num: Int) =>
-      startCartTimer(5)
-      shoppingCart = shoppingCart.removeItem(item, num)
+      persist(RemoveItemEvent(item, num)) {
+        event => updateCart(event)
+      }
+
       log.info("Items removed.")
-      if (shoppingCart.items.isEmpty) {
-        timers.cancel(CartTimer)
+      if (state.items.isEmpty) {
         log.info("Removing last item from cart.")
         zeroItemsAndBecomeEmpty()
       }
 
     case StartCheckout =>
-      timers.cancel(CartTimer)
-      checkout ! InitCheckout(shoppingCart, context.parent)
-      sender ! CheckoutStarted
       log.info("Starting checkout.")
-      context become InCheckout
-
+      persist(CartManagerStateChangeEvent(InCheckoutState)) {
+        event =>
+          updateState(event)
+          checkout ! InitCheckout(state, context.parent)
+          sender ! CheckoutStarted(checkout)
+      }
     case CartTimerExpired =>
       log.info("Cart Timer expired. Resetting cart to empty")
       zeroItemsAndBecomeEmpty()
+
+    case CheckState => sender ! CartNonEmpty
+
   }
 
 
-
-  def InCheckout: Receive = LoggingReceive {
+  def InCheckout: Receive = {
 
     case CancelCheckout =>
       log.info("Checkout canceled.")
-      startCartTimer(5)
-      context become NonEmpty
-
+      persist(CartManagerStateChangeEvent(NonEmptyState)) {
+        event =>
+          startCartTimer(2)
+          updateState(event)
+      }
     case CloseCheckout =>
       log.info("Checkout Closed. Resetting cart to Empty")
       zeroItemsAndBecomeEmpty()
-
   }
 
 
-  def receive: Receive = LoggingReceive {
+  override def receiveCommand: Receive = {
     case Init =>
       log.info("Initializing new CartManager with Empty context")
-      context become Empty
+      persist(EraseItemsEvent()) {
+        event => updateCart(event)
+      }
+      persist(CartManagerStateChangeEvent(EmptyState)) {
+        event => updateState(event)
+      }
   }
 
+  override def receiveRecover: Receive = {
+    case event: CartManagerStateChangeEvent => updateState(event)
+    case event: ItemEvent => updateCart(event)
+    case RecoveryCompleted => log.info("Recovery completed!")
+  }
+
+
+  // My methods
+
   def zeroItemsAndBecomeEmpty(): Unit = {
-    shoppingCart = Cart.empty
-    context become Empty
-    sender ! CartEmpty
+    persist(EraseItemsEvent()) { event =>
+      updateCart(event)
+    }
+    persist(CartManagerStateChangeEvent(EmptyState)) { event =>
+      updateState(event)
+      sender ! CartEmpty
+    }
   }
 
   def startCartTimer(timeInSeconds: Int): Unit = {

@@ -1,5 +1,5 @@
 import actors.{CartManager, _}
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
@@ -10,34 +10,55 @@ class CartManagerSpec extends TestKit(ActorSystem("ShopSystem"))
     system.terminate
   }
 
-  val mug =  Item("mug", BigDecimal(20))
-  val hat =  Item("hat", BigDecimal(60))
-  val bananas =  Item("bananas", BigDecimal(2), 5)
+  val mug = Item("mug", BigDecimal(20))
 
-
-  "A Cart" must {
+  "A Cart Manager" must {
 
     "receive confirmation that checkout started" in {
-      val cartManager = system.actorOf(Props[CartManager])
+      val id = "test-id-01"
+      val cartManager = system.actorOf(Props(new CartManager(id)), "manager-11")
       cartManager ! Init
       cartManager ! AddItem(mug)
       cartManager ! StartCheckout
-      expectMsg(CheckoutStarted)
+      expectMsgType[CheckoutStarted]
     }
 
-    "receive info about empty cart" in {
-      val cart = system.actorOf(Props[CartManager])
-      cart ! Init
-      cart ! AddItem(mug)
-      cart ! RemoveItem(mug, 1)
+    "Handle timeouts" in {
+      val id = "test-id-02"
+      val cartManager = system.actorOf(Props(new CartManager(id)), "manager-21")
+      cartManager ! Init
+      cartManager ! AddItem(mug)
+      cartManager ! CheckState
+      expectMsg(CartNonEmpty)
+
+      Thread.sleep(4 * 1000)
+
+      cartManager ! CheckState
       expectMsg(CartEmpty)
 
-      cart ! AddItem(mug)
-      cart ! StartCheckout
-      expectMsg(CheckoutStarted)
-      cart ! CloseCheckout
+    }
+
+    "Continue transaction after restart" in {
+      val id = "test-id-03"
+      val cartManager = system.actorOf(Props(new CartManager(id)), "manager-31")
+      cartManager ! Init
+      cartManager ! AddItem(mug)
+      cartManager ! AddItem(mug)
+      cartManager ! CheckState
+
+      expectMsg(CartNonEmpty)
+
+      cartManager ! PoisonPill
+
+      val cartManager2 = system.actorOf(Props(new CartManager(id)), "manager-41")
+      cartManager2 ! CheckState
+      expectMsg(CartNonEmpty)
+
+      Thread.sleep(4 * 1000)
+
+      cartManager2 ! CheckState
       expectMsg(CartEmpty)
+
     }
   }
-
 }

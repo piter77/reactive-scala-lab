@@ -59,25 +59,5 @@ class CartSpec extends TestKit(ActorSystem("ShopSystem"))
       assert(cart.items("mug").count == 1)
     }
 
-//    "go back to previous item number when checkout cancelled" in {
-//      val cart = TestActorRef[CartManager]
-//      cart ! Init
-//      cart ! AddItem
-//      assert(cart.underlyingActor.itemCount == 1)
-//      cart ! StartCheckout
-//      cart ! CancelCheckout
-//      assert(cart.underlyingActor.itemCount == 1)
-//    }
-//
-//
-//    "erase item number when checkout closed" in {
-//      val cart = TestActorRef[CartManager]
-//      cart ! Init
-//      cart ! AddItem
-//      assert(cart.underlyingActor.itemCount == 1)
-//      cart ! StartCheckout
-//      cart ! CloseCheckout
-//      assert(cart.underlyingActor.itemCount == 0)
-//    }
   }
 }

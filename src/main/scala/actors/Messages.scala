@@ -26,6 +26,7 @@ case object Done extends GeneralMessages
 
 case object NewCart extends CustomerMessages
 case object CartEmpty extends CustomerMessages
+case object CartNonEmpty extends CustomerMessages
 case object ConfirmReceivingPayment extends CustomerMessages
 case class CheckoutStarted(checkoutRef: ActorRef) extends CustomerMessages
 case class PaymentServiceStarted(paymentRef: ActorRef) extends CustomerMessages
@@ -36,6 +37,7 @@ case class AddItem(item: Item) extends CartMessages
 case object StartCheckout extends CartMessages
 case object CancelCheckout extends CartMessages
 case object CloseCheckout extends CartMessages
+case object CheckState extends CartMessages
 
 
 case object CartTimer extends MyTimers
