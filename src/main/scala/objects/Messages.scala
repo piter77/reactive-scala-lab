@@ -1,5 +1,6 @@
-package actors
+package objects
 
+import actors.{Cart, Item}
 import akka.actor.ActorRef
 
 //Messages generic for all actors

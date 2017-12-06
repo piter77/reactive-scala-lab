@@ -1,5 +1,6 @@
 import actors._
 import akka.actor._
+import objects._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

@@ -3,29 +3,9 @@ package actors
 import akka.actor.{Timers, _}
 import akka.event.Logging
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import objects._
 
 import scala.concurrent.duration._
-
-
-// states
-sealed trait CartManagerState
-
-case object EmptyState extends CartManagerState
-
-case object NonEmptyState extends CartManagerState
-
-case object InCheckoutState extends CartManagerState
-
-case class CartManagerStateChangeEvent(state: CartManagerState)
-
-
-sealed trait ItemEvent
-
-case class AddItemEvent(item: Item) extends ItemEvent
-
-case class RemoveItemEvent(item: Item, num: Int) extends ItemEvent
-
-case class EraseItemsEvent() extends ItemEvent
 
 
 class CartManager(id: String = "sample-id") extends PersistentActor with Timers {

@@ -1,6 +1,7 @@
 import actors._
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import objects._
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
 class CustomerSpec extends TestKit(ActorSystem("ShopSystem"))

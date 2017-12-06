@@ -2,6 +2,7 @@ package actors
 
 import akka.actor.{Actor, ActorRef, Props, Timers}
 import akka.event.{Logging, LoggingReceive}
+import objects._
 
 import scala.concurrent.duration._
 

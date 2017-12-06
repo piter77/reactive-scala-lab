@@ -1,6 +1,7 @@
 import actors.{CartManager, _}
 import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit}
+import objects._
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
 class CartManagerSpec extends TestKit(ActorSystem("ShopSystem"))
