@@ -7,19 +7,21 @@ import scala.concurrent.duration._
 
 object ShopApp extends App {
   val shopSystem = ActorSystem("ShopSystem")
-  val cartManager = shopSystem.actorOf(Props[CartManager], "CartManager")
 
-  val customer = shopSystem.actorOf(Props[Customer], "customer")
+  val id = "test-checkout-id-2"
+  val notEmptyCart = Cart.empty.addItem(Item("123", BigDecimal(23), 5))
 
-  customer ! NewCart
+  val checkout = shopSystem.actorOf(Props(new Checkout(id)), "checkout-1")
+  val customer = shopSystem.actorOf(Props[Customer], "customer-1")
 
-  customer ! AddItem(Item("mug", BigDecimal(20)))
-  customer ! AddItem(Item("mug", BigDecimal(20)))
 
-  customer ! StartCheckout
+  checkout ! InitCheckout(notEmptyCart, customer)
+  checkout ! SelectDeliveryMethod("with post")
+  checkout ! SelectPaymentMethod("cash")
 
-  customer ! SelectDeliveryMethod("FastAndFurious Courier s.a.")
-  customer ! SelectPaymentMethod("On receive")
+  shopSystem.terminate
+
+
 
   Await.result(shopSystem.whenTerminated, Duration.Inf)
 }

@@ -8,12 +8,12 @@ import objects._
 import scala.concurrent.duration._
 
 
-class CartManager(id: String = "sample-id") extends PersistentActor with Timers {
+class CartManager(id: String = "cart_manager-id") extends PersistentActor with Timers {
 
   var state = Cart()
 
   val log = Logging(context.system, this)
-  val checkout: ActorRef = context.actorOf(Props[Checkout], "checkout")
+  val checkout: ActorRef = context.actorOf(Props(new Checkout(id + "-checkout")), "checkout-1")
 
   override def persistenceId = id
 
