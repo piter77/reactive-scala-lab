@@ -51,6 +51,7 @@ case object PaymentTimer extends MyTimers
 case class SelectPaymentMethod(paymentMethod: String) extends CheckoutMessages
 case class SelectDeliveryMethod(deliveryMethod: String) extends CheckoutMessages
 case object ReceivedPayment extends CheckoutMessages
+case object NotReceivedPayment extends CheckoutMessages
 case class InitCheckout(cart: Cart, customer: ActorRef) extends CheckoutMessages
 
-case object DoPayment extends PaymentServiceMessages
+case class DoPayment(method: String) extends PaymentServiceMessages

@@ -52,6 +52,10 @@ class Checkout(id: String = "checkout-id") extends PersistentActor with Timers {
       context.parent ! CloseCheckout
       context stop self
 
+    case NotReceivedPayment =>
+      log.info("Payment Not Received.")
+      cancelCheckout()
+
     case Cancel(PaymentTimer) =>
       cancelCheckout()
 
