@@ -52,14 +52,14 @@ class PaymentService extends Actor with ActorLogging {
 
   }
 
-  def shutdown() = {
+  def shutdown(): Unit = {
     Await.result(http.shutdownAllConnectionPools(), Duration.Inf)
 
     sender ! ConfirmReceivingPayment
     context.parent ! ReceivedPayment
     context stop self
   }
-  def shutdownWithFailure() = {
+  def shutdownWithFailure(): Unit = {
     Await.result(http.shutdownAllConnectionPools(), Duration.Inf)
 
     sender ! ConfirmReceivingPayment

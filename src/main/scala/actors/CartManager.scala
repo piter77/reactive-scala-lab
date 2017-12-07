@@ -15,7 +15,7 @@ class CartManager(id: String = "cart_manager-id") extends PersistentActor with T
   val log = Logging(context.system, this)
   val checkout: ActorRef = context.actorOf(Props(new Checkout(id + "-checkout")), "checkout-1")
 
-  override def persistenceId = id
+  override def persistenceId: String = id
 
   def updateState(event: CartManagerStateChangeEvent): Unit = {
     log.info("Changing context to " + event.state.toString)

@@ -15,8 +15,9 @@ class Checkout(id: String = "checkout-id") extends PersistentActor with Timers {
   var customer: ActorRef = _
   var paymentService: ActorRef = _
   var deliveryMethod: String = _
+  var paymentMethod: String = _
 
-  override def persistenceId = id
+  override def persistenceId: String = id
 
   def updateState(event: CheckoutEvent): Unit = {
     var newState: CheckoutState = SelectingDeliveryState
@@ -31,6 +32,7 @@ class Checkout(id: String = "checkout-id") extends PersistentActor with Timers {
         deliveryMethod = method
       case SelectedPaymentMethodEvent(method, state) =>
         newState = state
+        paymentMethod = method
         startTimer(PaymentTimer, 5)
         paymentService = context.actorOf(Props[PaymentService], "paymentService")
     }
@@ -71,6 +73,7 @@ class Checkout(id: String = "checkout-id") extends PersistentActor with Timers {
         event => updateState(event)
       }
       customer ! PaymentServiceStarted(paymentService)
+//      paymentService ! DoPayment(method)
 
     case Cancel(CheckoutTimer) =>
       cancelCheckout()

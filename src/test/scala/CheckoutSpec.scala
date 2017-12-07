@@ -24,12 +24,15 @@ class CheckoutSpec extends TestKit(ActorSystem("ShopSystem"))
       parent.send(checkout, InitCheckout(notEmptyCart, customerMock.ref))
       checkout ! CheckState
       expectMsg(SelectingDeliveryState)
+
       checkout ! SelectDeliveryMethod("with post")
       checkout ! CheckState
       expectMsg(SelectingPaymentMethodState)
+
       checkout ! SelectPaymentMethod("cash")
       checkout ! CheckState
       expectMsg(ProcessingPaymentState)
+
       checkout ! ReceivedPayment
       parent.expectMsg(CloseCheckout)
 

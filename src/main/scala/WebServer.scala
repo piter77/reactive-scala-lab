@@ -4,15 +4,16 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
 object WebServer {
   def main(args: Array[String]) {
 
     implicit val system = ActorSystem("ShopSystem")
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer: ActorMaterializer = ActorMaterializer()
     // needed for the future flatMap/onComplete in the end
-    implicit val executionContext = system.dispatcher
+    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
     val route =
       path("visa") {
